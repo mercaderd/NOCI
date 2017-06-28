@@ -1,25 +1,25 @@
-function [correlation_data, elapsedTime] = ICA_by_two_blocks(X,maxICs,random,verbose)
-%ICA_by_two_blocks Optimal Number of Independant Components determination
-%with ICA by blocks method
+function [correlation_data, elapsedTime] = rv_ICA_by_two_blocksR(X,maxICs,random,verbose)
+%rv_ICA_by_two_blocks Optimal Number of Independant Components determination
+%with Rv ICA by blocks method
 %
 %   Input parameters:
 %       X: MxN matrix. N samples of M sensors.
 %       maxICs: maximun ICs for calculations
 %       random: true or false to apply random order to sensor data for
 %          block creation
-%       verbose: 0 no verbose, 1 plot correlation_data
+%       verbose: 0 no verbose, 1 plot RV correlation_data
 %
 %   Output parameters:
-%       correlation_data: Cell Array with correlation data
+%       correlation_data:  mxICs x 1 Vector with RV coeffs
 %       elapsedTime: For timing purpouses
 % 
 % Author: Daniel Mercader (mercaderd@yahoo.es)
 % Universidad Nacional de Educación a Distancia 
 %
-if (nargin < 4) verbose = 1; end;
+
+if (nargin < 4) verbose = 0; end;
 
 [nobs,t] = size(X);
-
 if random == true
     irand = randperm(nobs);
     X=X(irand,:);
@@ -41,30 +41,27 @@ parfor i = 1:blocks
     block(:,:,i)=X(((i-1)*block_length+1):(i*block_length),:);
 end
 
-correlation_data = cell(maxICs,1);
+correlation_data = zeros(maxICs,1);
 block1 = block(:,:,1);
 block2 = block(:,:,2);
 parfor nICs=1:maxICs
-    [A1,ICs1] = jader(block1,nICs);
-    [A2,ICs2] = jader(block2,nICs);
-    correlation_data{nICs} = sort(max(abs(corr(ICs1',ICs2')),[],2),'descend');
+    B1 = jader(block1,nICs);
+    B2 = jader(block2,nICs);
+    ICs1=B1*block1;
+    ICs2=B2*block2;
+    correlation_data(nICs) = RV_coeff(ICs1,ICs2);
 end
 elapsedTime = toc;
+
 if verbose > 0
     h = figure;
-    hold all;
-    leyendas = cell(maxICs,1);
-    for i=1:length(correlation_data)
-            plot(correlation_data{i},'-x');
-            leyendas{i}=sprintf('#%i maxICs', i);
-    end;
-    legend(leyendas);
-    ylabel('absolute correlation value |r|');
-    xlabel('# IC');
-    title('ICA by two blocks');
+    plot(correlation_data','-x');
+    ylabel('RV coeff');
+    xlabel('# ICs');
+    title('RV ICA by two Blocks');
     ylimits=ylim;
     ylimits(2) = 1.1;
     ylim(ylimits);
-    print(h,sprintf('ICA%d.png',nobs),'-dpng');
+    print(h,sprintf('rvICA%d.png',nobs),'-dpng');
 end;
 end

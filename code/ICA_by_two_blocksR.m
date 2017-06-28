@@ -1,4 +1,4 @@
-function [correlation_data, elapsedTime] = ICA_by_two_blocks(X,maxICs,random,verbose)
+function [correlation_data, elapsedTime] = ICA_by_two_blocksR(X,maxICs,random,verbose)
 %ICA_by_two_blocks Optimal Number of Independant Components determination
 %with ICA by blocks method
 %
@@ -45,8 +45,10 @@ correlation_data = cell(maxICs,1);
 block1 = block(:,:,1);
 block2 = block(:,:,2);
 parfor nICs=1:maxICs
-    [A1,ICs1] = jader(block1,nICs);
-    [A2,ICs2] = jader(block2,nICs);
+    B1 = jader(block1,nICs);
+    B2 = jader(block2,nICs);
+    ICs1=B1*block1;
+    ICs2=B2*block2;
     correlation_data{nICs} = sort(max(abs(corr(ICs1',ICs2')),[],2),'descend');
 end
 elapsedTime = toc;
